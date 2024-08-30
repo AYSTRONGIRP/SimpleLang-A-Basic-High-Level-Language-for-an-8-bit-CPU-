@@ -159,6 +159,12 @@ shared_ptr<ASTNode> Parser::parseStat(){
 shared_ptr<ASTNode> Parser::parseVarAssign(){
     cout<<"in varassign"<<endl;
     string varN = previous().value;
+
+    // Semantic Check
+    if (VariableNode::mem_loc.find(varN) == VariableNode::mem_loc.end()) {
+        throw runtime_error("Semantic Error: Variable '" + varN + "' not declared.");
+    }
+
     consume({Tokentype::EQUAL},"expect = ");
     shared_ptr<ASTNode> val = parseExp();
     consume({Tokentype::SEMICOLON},"expect ; ");
@@ -169,6 +175,12 @@ shared_ptr<ASTNode> Parser::parseVarDec(){
     cout<<"in vardec"<<endl;
     consume(Tokentype::IDENTIFIER,"expect var");
     cout<<"got var - "<<previous().value<<endl;
+
+    // Semantic Check: Variable redeclaration check
+    if (VariableNode::mem_loc.find(previous().value) != VariableNode::mem_loc.end()) {
+        throw runtime_error("Semantic Error: Variable '" + previous().value + "' already declared.");
+    }
+
     string varN = previous().value;
 
     shared_ptr<ASTNode> val = nullptr;
@@ -228,12 +240,6 @@ shared_ptr<ASTNode> Parser::parseExp(){
     cout<<"parse expression for left"<<endl;
     shared_ptr<ASTNode> l = parsePrim();
 
-    // while(match({Tokentype::EQ})){
-    //     char op = previous().value[0];
-    //     shared_ptr<ASTNode> r = parsePrim();
-    //     l = make_shared<BinaryOpNode>(l,op,r);
-    // }
-
     while(match({Tokentype::PLUS, Tokentype::MINUS ,Tokentype::EQ})){
         char op = previous().value[0];
         cout<<"parse expression for right"<<endl;
@@ -291,7 +297,10 @@ Token Parser::previous(){
 }
 
 void Parser::advance(){
-    if(!isAtEnd())pos++;
+    if(!isAtEnd()){
+    pos++;
+    return ;
+    }
     cout<<"ran out of tokens"<<endl;
     cout<<pos<<endl;
 }

@@ -11,7 +11,6 @@ void printTokens(vector<Token>& tokens){
 }
 int main(){
     ifstream inputFile("input.txt");
-    // ofstream outFile("\\wsl.localhost\\Ubuntu-22.04\root\\8bit-computer\\tests\\code.asm");
     ofstream outFile("output.asm");
 
     if(!outFile.is_open()){
