@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include<algorithm>
+#include<sstream>
 using namespace std;
 
 map<string,int> VariableNode::mem_loc;
@@ -10,48 +11,79 @@ int VariableNode::counter = 1;
 
 NumberNode::NumberNode(int val):val(val){};
 
+void NumberNode::generateCode(ostream& out){
+    out<<"ldi A "<<val<<endl;
+    cout<<"ldi A "<<val<<endl;
+    cout<<"genertaing in b number node"<<endl;
+}
+
 void NumberNode::generateL(ostream& out){
     out<<"ldi A "<<val<<endl;
     cout<<"ldi A "<<val<<endl;
+    cout<<"genertaing in l number node"<<endl;
+
 }
 
 void NumberNode::generateR(ostream& out){
     out<<"ldi B "<<val<<endl;
     cout<<"ldi B "<<val<<endl;
+    cout<<"genertaing in r number node"<<endl;
+
 }
 
-VariableNode::VariableNode(string& name):name(name){
-    // if(mem_loc.find(name)== mem_loc.end())
-    //     mem_loc[name]=counter++;
+VariableNode::VariableNode(string name):name(name){
+    if(mem_loc.find(name)== mem_loc.end())
+        mem_loc[name]=counter++;
 
     id = mem_loc[name];
 }
 
+void VariableNode::generateCode(ostream& out){
+    cout<<"genertaing in b VariableNode"<<endl;
+}
+
 void VariableNode::generateL(ostream& out){
-    out<<"mov B M "<<mem_loc[name]<<endl;
+    cout<<"in variable node L"<<endl;
+    out<<"mov A M "<<mem_loc[name]<<endl;
+    cout<<"mov A M "<<mem_loc[name]<<endl;
 }
 
 void VariableNode::generateR(ostream& out){
-    out<<"mov b M"<< mem_loc[name]<<endl;
+    cout<<"in variable node R"<<endl;
+    out<<"mov B M "<< mem_loc[name]<<endl;
+    cout<<"mov B M "<< mem_loc[name]<<endl;
+
 }
 
+BinaryOpNode::BinaryOpNode(shared_ptr<ASTNode> l, char op , shared_ptr<ASTNode> r)
+:l(l),op(op),r(r){}
+
 void BinaryOpNode::generateCode(ostream& out){
+    cout<<"in binary node"<<endl;
     l->generateL(out);
     r->generateR(out);
     switch(op){
-        case '+' : out<<"add"<<endl;break;
-        case '-' : out<<"sub"<<endl;break;
-        case '#' : out<<"cmp"<<endl;break;
+        case '+' : out<<"add"<<endl;cout<<"add"<<endl;break;
+        case '-' : out<<"sub"<<endl;cout<<"sub"<<endl;break;
+        case '#' : out<<"cmp"<<endl;cout<<"cmp"<<endl;break;
         default:throw runtime_error("unsupported binary op");
     }
 }
+
 
 VariableDec::VariableDec(string varN ,shared_ptr<ASTNode> val):varN(varN),val(val){
     VariableNode::mem_loc[varN]=VariableNode::counter++;
 }
 
 void VariableDec::generateCode(ostream& out){
-
+    if(mem_loc.find(varN)==mem_loc.end()){
+        mem_loc[varN]=counter++;
+    }
+    cout<<"variable declation in b"<<endl;
+    val->generateCode(out);
+    cout<<"storing value to mem location"<<endl;
+    cout<<"mov M A "<<mem_loc[varN]<<endl;
+    out<<"mov M A "<<mem_loc[varN]<<endl;
 }
 
 ConditionalNode::ConditionalNode(shared_ptr<ASTNode> cond , shared_ptr<ASTNode>then_br , shared_ptr<ASTNode> else_br)
@@ -60,13 +92,21 @@ ConditionalNode::ConditionalNode(shared_ptr<ASTNode> cond , shared_ptr<ASTNode>t
 void ConditionalNode::generateCode(ostream& out){
     cond->generateCode(out);
     out<<"jnz %ELSEBR"<<endl;
+    cout<<"jnz %ELSEBR"<<endl;
+
     then_br->generateCode(out);
     out<<"jmp %OUTOFIF"<<endl;
+    cout<<"jmp %OUTOFIF"<<endl;
+
     out<<"ELSEBR:"<<endl;
+    cout<<"ELSEBR:"<<endl;
+
     if(else_br){
         else_br->generateCode(out);
     }
     out<<"OUTOFIF:"<<endl;
+    cout<<"OUTOFIF:"<<endl;
+
 }
 
 void BlockNode::addStat(shared_ptr<ASTNode> statement){
@@ -74,15 +114,20 @@ void BlockNode::addStat(shared_ptr<ASTNode> statement){
 }
 
 void BlockNode::generateCode(ostream& out){
-    for(shared_ptr<ASTNode> each : statements){
+    
+    cout<<"started genertaing code"<<endl;
+    for(auto each : statements){
         each->generateCode(out);
     }
+    cout<<"ended genertaing code"<<endl;
 }
 
-Parser::Parser(vector<Token>& token):tokens(tokens),pos(0){}
+Parser::Parser(vector<Token>& tokens):tokens(tokens),pos(0){
+    cout<<"initialising parser"<<endl;
+}
 
 shared_ptr<ASTNode> Parser::parse(){
-    shared_ptr<BlockNode> bNode = shared_ptr<BlockNode>();
+    shared_ptr<BlockNode> bNode = make_shared<BlockNode>();
     while(!isAtEnd()){
         bNode->addStat(parseStat());
     }
@@ -90,53 +135,76 @@ shared_ptr<ASTNode> Parser::parse(){
 }
 
 shared_ptr<ASTNode> Parser::parseStat(){
+    cout<<"in parsestat"<<endl;
     if(match({Tokentype::INT})){
+        cout<<"found int"<<endl;
         return parseVarDec();
     }else if(match({Tokentype::IF})){
+        cout<<"found if"<<endl;
         return parseCond();
     }else if(match({Tokentype::IDENTIFIER})){
+        cout<<"found var"<<endl;
         return parseVarAssign();
     }else{
+        cout<<"found exp state"<<endl;
         return parseExpStat();
     }
 }
 
+shared_ptr<ASTNode> Parser::parseVarAssign(){
+    cout<<"in varassign"<<endl;
+    string varN = previous().value;
+    consume({Tokentype::EQUAL},"expect = ");
+    shared_ptr<ASTNode> val = parseExp();
+    consume({Tokentype::SEMICOLON},"expect ; ");
+    return make_shared<VariableDec>(varN,val);
+}
+
 shared_ptr<ASTNode> Parser::parseVarDec(){
-    consume(Tokentype::IDENTIFIER);
+    cout<<"in vardec"<<endl;
+    consume(Tokentype::IDENTIFIER,"expect var");
+    cout<<"got var - "<<previous().value<<endl;
     string varN = previous().value;
 
     shared_ptr<ASTNode> val = nullptr;
 
     if(match({Tokentype::EQUAL})){
+        cout<<"matched = "<<endl;
         val=parseExp();
+    }else{
+        cout<<"didnt found = "<<tokens[pos].value<<endl;
+        consume(Tokentype::SEMICOLON,"expect ;");
+        return make_shared<VariableNode>(varN,val);
     }
 
-    consume(Tokentype::SEMICOLON);
+    consume(Tokentype::SEMICOLON,"expect ;");
     return make_shared<VariableDec>(varN,val);
 }
 
 shared_ptr<ASTNode> Parser::parseCond(){
-    consume({Tokentype::LPAREN});
-    shared_ptr<ASTNode> cond = parseExp();
-    consume({Tokentype::RPAREN});
-    shared_ptr<ASTNode> then_br = parseBlock();
-    shared_ptr<ASTNode> else_br = nullptr;
+    cout<<"in par cond"<<endl;
+    consume({Tokentype::LPAREN},"expect (");
+    shared_ptr<ASTNode> cond1 = parseExp();
+    consume({Tokentype::RPAREN},"expect )");
+    shared_ptr<ASTNode> then_br1 = parseBlock();
+    shared_ptr<ASTNode> else_br1 = nullptr;
 
     if(match({Tokentype::ELSE})){
-        else_br=parseBlock();
+        else_br1=parseBlock();
     }
 
-    make_shared<ConditionalNode>(cond,then_br,else_br);
+    return make_shared<ConditionalNode>(cond1,then_br1,else_br1);
 }
 
 shared_ptr<ASTNode> Parser::parseBlock(){
+    cout<<"in parse block"<<endl;
     if(match({Tokentype::LBRACE})){
         shared_ptr<BlockNode> b = make_shared<BlockNode>();
         
         while(!check(Tokentype::RBRACE) && !isAtEnd()){
             b->addStat(parseStat());
         }   
-        consume(Tokentype::RBRACE);
+        consume(Tokentype::RBRACE,"expect }");
         return b;
     }else{
         return parseStat();
@@ -144,12 +212,15 @@ shared_ptr<ASTNode> Parser::parseBlock(){
 }
 
 shared_ptr<ASTNode> Parser::parseExpStat(){
+    cout<<"in parseExpStat"<<endl;
     shared_ptr<ASTNode> exp = parseExp();
-    consume(Tokentype::SEMICOLON);
+    consume(Tokentype::SEMICOLON,"expect ;");
     return exp;
 }
 
 shared_ptr<ASTNode> Parser::parseExp(){
+    cout<<"in parseExp"<<endl;
+    cout<<"parse expression for left"<<endl;
     shared_ptr<ASTNode> l = parsePrim();
 
     // while(match({Tokentype::EQ})){
@@ -160,6 +231,8 @@ shared_ptr<ASTNode> Parser::parseExp(){
 
     while(match({Tokentype::PLUS, Tokentype::MINUS ,Tokentype::EQ})){
         char op = previous().value[0];
+        cout<<"parse expression for right"<<endl;
+        cout<<tokens[pos].value<<endl;
         shared_ptr<ASTNode> r = parsePrim();
         l = make_shared<BinaryOpNode>(l,op,r);
     }
@@ -168,23 +241,35 @@ shared_ptr<ASTNode> Parser::parseExp(){
 }
 
 shared_ptr<ASTNode> Parser::parsePrim(){
+    cout<<"in parseprim"<<endl;
     if(match({Tokentype::NUMBER})){
+        cout<<"got number"<<endl;
+        cout<<previous().value<<"returning"<<endl;
         return make_shared<NumberNode>(stoi(previous().value));
     }else if(match({Tokentype::IDENTIFIER})){
         return make_shared<VariableNode>(previous().value);
+        cout<<"got var"<<endl;
     }else if(match({Tokentype::LPAREN})){
+        cout<<"got ("<<endl;
         shared_ptr<ASTNode> exp = parseExp();
-        consume({Tokentype::RPAREN});
+        consume({Tokentype::RPAREN},"expect )");
+        cout<<"got )"<<endl;
         return exp;
     }
+    cout<<tokens[pos].value<<endl;
     throw runtime_error("unexpected token ");
 }
 
-bool Parser::match(vector<Tokentype>& types){
-    auto it = find_if(types.begin(),types.end(),[&](Tokentype type){ return type = tokens[pos].type;});
+bool Parser::match(vector<Tokentype> types){
+    auto it = find_if(types.begin(),types.end(),[&](Tokentype type){ 
+        // cout<<type<<" needed "<<endl;
+        return type == tokens[pos].type;
+        });
     if(it!=types.end()){
-        pos++; return true ;
+        pos++; 
+        return true ;
     }
+    cout<<"had "<<tokens[pos].value<<endl;
     return false;
 }
 bool Parser::isAtEnd(){
@@ -201,12 +286,16 @@ Token Parser::previous(){
 }
 
 void Parser::advance(){
-    if(isAtEnd())pos++;
+    if(!isAtEnd())pos++;
+    cout<<"ran out of tokens"<<endl;
+    cout<<pos<<endl;
 }
-void Parser::consume(Tokentype type){
+void Parser::consume(Tokentype type , string errorMessage){
     if(check(type))
         advance();
     else{
+        
+        cout<< errorMessage << '\n' << "found - " <<tokens[pos].value<<endl;
         throw runtime_error("wrong token present");
     }
 }

@@ -3,6 +3,14 @@
         "*.ejs": "html",
         "memory": "cpp",
         "vector": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "ostream": "cpp",
+        "iosfwd": "cpp",
+        "system_error": "cpp",
+        "xlocale": "cpp",
+        "xstring": "cpp",
+        "iostream": "cpp",
+        "initializer_list": "cpp",
+        "iterator": "cpp"
     }
 }

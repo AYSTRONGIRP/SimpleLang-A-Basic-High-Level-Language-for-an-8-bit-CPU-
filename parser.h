@@ -1,9 +1,10 @@
+#ifndef PARSER_H
+#define PARSER_H
+#include "lexer.h"
 #include <ostream>
 #include <map>
 #include <vector>
-#include "lexer.h"
-#ifndef PARSER_H
-#define PARSER_H
+#include<memory>
 using namespace std;
 class ASTNode {
     public:
@@ -16,6 +17,7 @@ class NumberNode : public ASTNode{
     public:
         int val;
         NumberNode(int val);
+        void generateCode(ostream& out);
         void generateL(ostream &out);
         void generateR(ostream& out);
 };
@@ -27,8 +29,9 @@ class VariableNode : public ASTNode {
 
         string name;
         int id ;
-        VariableNode(string& name);
+        VariableNode(string name);
         VariableNode(){};
+        void generateCode(ostream& out);
         void generateL(ostream &out);
         void generateR(ostream& out);
 };
@@ -39,8 +42,8 @@ class VariableDec : public VariableNode{
         shared_ptr<ASTNode> val ;
         VariableDec(string varN , shared_ptr<ASTNode> val);
         void generateCode(ostream& out);
-        void generateL(ostream &out);
-        void generateR(ostream& out);
+        void generateL(ostream &out){};
+        void generateR(ostream& out){};
 };
 
 class BinaryOpNode : public ASTNode {
@@ -48,8 +51,8 @@ class BinaryOpNode : public ASTNode {
         shared_ptr<ASTNode> l , r ;
         char op ;
         BinaryOpNode(shared_ptr<ASTNode> l, char op , shared_ptr<ASTNode> r);
-        // void generateL(ostream &out);
-        // void generateR(ostream& out);
+        void generateL(ostream &out){};
+        void generateR(ostream& out){};
         void generateCode(ostream &out);
 };
 
@@ -58,18 +61,18 @@ class ConditionalNode : public ASTNode {
         shared_ptr<ASTNode> cond , then_br , else_br ;
         ConditionalNode(shared_ptr<ASTNode>cond , shared_ptr<ASTNode> then_br , shared_ptr<ASTNode> else_br);
         void generateCode(ostream &out);
-        // void generateL(ostream &out);
-        // void generateR(ostream& out);
+        void generateL(ostream &out){};
+        void generateR(ostream& out){};
 };
 
 class BlockNode : public ASTNode {
     public:
         vector<shared_ptr<ASTNode>> statements;
-        BlockNode::BlockNode(){}
+        BlockNode(){}
         void addStat(shared_ptr<ASTNode> statement);
         void generateCode(ostream &out);
-        // void generateL(ostream &out);
-        // void generateR(ostream& out);
+        void generateL(ostream &out){};
+        void generateR(ostream& out){};
 };
 
 class Parser {
@@ -91,12 +94,12 @@ class Parser {
         shared_ptr<ASTNode> parseBlock();
 
         
-        bool match(vector<Tokentype>& types);
+        bool match(vector<Tokentype> types);
         bool isAtEnd();
         bool check(Tokentype type);
         void advance();
         Token previous();
-        void consume(Tokentype type);
+        void consume(Tokentype type,string);
 };
 
 

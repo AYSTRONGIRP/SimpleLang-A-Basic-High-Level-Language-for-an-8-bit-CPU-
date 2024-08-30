@@ -43,9 +43,10 @@ vector<Token> Lexer::tokenize(){
                         pos++;
                         if(pos<source.length() && source[pos] == '='){
                             tokens.push_back({Tokentype::EQ,"#"}); //== will not work for my binary node as switch need char const
-                            pos++;
+                            // pos++;
                         }else{
                             tokens.push_back({Tokentype::EQUAL,"="});
+                            cout<<"in equal too"<<endl;
                             pos--;
                         }
                         break;
@@ -55,7 +56,7 @@ vector<Token> Lexer::tokenize(){
                         case ')':tokens.push_back({Tokentype::RPAREN,")"});break;
                         case '{':tokens.push_back({Tokentype::LBRACE,"{"});break;
                         case '}':tokens.push_back({Tokentype::RBRACE,"}"});break;
-                        case ';':tokens.push_back({Tokentype::PLUS,";"});break;
+                        case ';':tokens.push_back({Tokentype::SEMICOLON,";"});break;
                         default: cerr<< "unknown character" <<cur <<endl;
                     }
                     pos++;
