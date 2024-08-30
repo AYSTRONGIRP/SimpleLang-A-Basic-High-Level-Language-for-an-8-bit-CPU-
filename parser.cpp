@@ -40,6 +40,9 @@ VariableNode::VariableNode(string name):name(name){
 
 void VariableNode::generateCode(ostream& out){
     cout<<"genertaing in b VariableNode"<<endl;
+    cout<<"giving memory space"<<endl;
+    cout<<"mov M A "<<mem_loc[name]<<endl;
+    out<<"mov M A "<<mem_loc[name]<<endl;
 }
 
 void VariableNode::generateL(ostream& out){
@@ -72,7 +75,9 @@ void BinaryOpNode::generateCode(ostream& out){
 
 
 VariableDec::VariableDec(string varN ,shared_ptr<ASTNode> val):varN(varN),val(val){
-    VariableNode::mem_loc[varN]=VariableNode::counter++;
+    if(mem_loc.find(varN)==mem_loc.end())
+        VariableNode::mem_loc[varN]=VariableNode::counter++;
+    
 }
 
 void VariableDec::generateCode(ostream& out){
@@ -174,7 +179,7 @@ shared_ptr<ASTNode> Parser::parseVarDec(){
     }else{
         cout<<"didnt found = "<<tokens[pos].value<<endl;
         consume(Tokentype::SEMICOLON,"expect ;");
-        return make_shared<VariableNode>(varN,val);
+        return make_shared<VariableNode>(varN);
     }
 
     consume(Tokentype::SEMICOLON,"expect ;");
